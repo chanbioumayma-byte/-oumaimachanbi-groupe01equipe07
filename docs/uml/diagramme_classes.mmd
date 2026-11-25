@@ -1,0 +1,57 @@
+classDiagram
+  class User {
+    +String id
+    +String name
+    +String email
+    +UserRole role
+    +String phone
+    +int ecoPoints
+    +int mealsRescued
+    +double foodSavedKg
+    +double moneySavedTnd
+    +bool active
+  }
+
+  class Merchant {
+    +String id
+    +String ownerId
+    +String name
+    +OfferCategory category
+    +String address
+    +int distanceMeters
+    +MerchantStatus status
+    +int totalMealsSaved
+  }
+
+  class Offer {
+    +String id
+    +String merchantId
+    +String title
+    +OfferType offerType
+    +double originalPrice
+    +double discountedPrice
+    +int quantity
+    +double weightKg
+    +String pickupStart
+    +String pickupEnd
+    +bool active
+  }
+
+  class Order {
+    +String id
+    +String studentId
+    +String merchantId
+    +double totalAmount
+    +double savingsTnd
+    +OrderStatus status
+    +String paymentRef
+    +String qrToken
+    +String pickupCode
+    +int ecoPointsAwarded
+  }
+
+  User "1" --> "0..1" Merchant : gere
+  Merchant "1" --> "0..*" Offer : publie
+  User "1" --> "0..*" Order : reserve
+  Merchant "1" --> "0..*" Order : traite
+  Order "1" --> "1..*" Offer : contient

@@ -1,0 +1,21 @@
+sequenceDiagram
+  actor E as Etudiant
+  participant App as React / Flutter Client
+  participant API as Node.js / Express API
+  participant K as Konnect Test Sandbox
+  actor C as Commercant
+
+  E->>App: Selectionne offre & valide quantite
+  App->>API: POST /api/orders
+  API-->>App: Commande creee (pending_payment)
+  E->>App: Choisit mode Konnect (Wallet / Carte / e-Dinar)
+  App->>API: POST /api/payments/konnect/init
+  API->>K: Cree session paiement test
+  K-->>API: paymentRef (KNT-TEST-...)
+  App->>API: POST /api/payments/konnect/confirm
+  API-->>App: Statut paid + qrToken + pickupCode (CS-XXXX)
+  Note over E,C: A l'heure de retrait pres de l'ESSECT
+  E->>C: Presente QR Code
+  C->>App: Scanne ou saisit pickupCode
+  App->>API: POST /api/orders/verify-qr
+  API-->>App: Statut picked_up + EcoPoints (+25/+40) + Impact CO2

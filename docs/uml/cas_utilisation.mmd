@@ -1,0 +1,37 @@
+flowchart LR
+  Etudiant((Etudiant ESSECT))
+  Commercant((Commercant))
+  Admin((Administrateur))
+  Konnect[[Passerelle Konnect Test]]
+
+  subgraph CampusSave
+    UC1([S'inscrire / Se connecter])
+    UC2([Rechercher offres & Campus Radar])
+    UC3([Reserver offre / Panier Surprise])
+    UC4([Payer via Konnect Test])
+    UC5([Afficher QR Code de retrait])
+    UC6([Consulter EcoPoints & Impact])
+    UC7([Gerer fiche commerce])
+    UC8([Publier / Modifier / Supprimer offres])
+    UC9([Scanner & Valider QR Code])
+    UC10([Valider / Rejeter commercants])
+    UC11([Superviser utilisateurs & statistiques])
+  end
+
+  Etudiant --> UC1
+  Etudiant --> UC2
+  Etudiant --> UC3
+  Etudiant --> UC4
+  Etudiant --> UC5
+  Etudiant --> UC6
+
+  Commercant --> UC1
+  Commercant --> UC7
+  Commercant --> UC8
+  Commercant --> UC9
+
+  Admin --> UC1
+  Admin --> UC10
+  Admin --> UC11
+
+  UC4 --> Konnect

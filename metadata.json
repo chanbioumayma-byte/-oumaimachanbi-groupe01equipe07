@@ -1,0 +1,6 @@
+{
+  "name": "CampusSave",
+  "description": "Plateforme universitaire intelligente de lutte contre le gaspillage alimentaire autour de l'ESSECT (React.js, Node.js/Express, Flutter, Firebase).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

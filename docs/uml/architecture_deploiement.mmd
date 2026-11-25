@@ -1,0 +1,24 @@
+flowchart TB
+  subgraph Clients
+    Web["Application Web\nReact.js 19 + Tailwind CSS"]
+    Mobile["Application Mobile\nFlutter / Dart (Android & iOS)"]
+  end
+
+  subgraph Backend["Backend Unifie"]
+    API["API REST Node.js / Express\nAuth scrypt + Bearer HMAC + RBAC"]
+    Konnect["Connecteur Konnect Sandbox"]
+  end
+
+  subgraph Cloud["Services & Persistance Firebase"]
+    Auth["Firebase Authentication"]
+    DB["Cloud Firestore / Store JSON"]
+    FCM["Firebase Cloud Messaging"]
+  end
+
+  Web -->|HTTPS REST| API
+  Mobile -->|HTTPS REST| API
+  API --> Konnect
+  API --> DB
+  Mobile --> Auth
+  Mobile --> FCM
+  Web --> FCM

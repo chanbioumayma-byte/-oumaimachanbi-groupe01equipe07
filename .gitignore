@@ -1,0 +1,20 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Clés Firebase (SECRET : ne jamais publier)
+*serviceAccountKey*.json
+*firebase-adminsdk*.json
+
+# Ancienne base JSON locale (remplacée par Firestore)
+data/
+.dart_tool/
+.idea/
+*.iml
+.vscode/
+google-services.json

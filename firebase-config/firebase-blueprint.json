@@ -1,0 +1,89 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Compte utilisateur CampusSave (Etudiant, Commercant ou Administrateur ESSECT)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "role": { "type": "string", "enum": ["student", "merchant", "admin"] },
+        "phone": { "type": "string", "maxLength": 30 },
+        "studentCardId": { "type": "string", "maxLength": 40 },
+        "ecoPoints": { "type": "integer" },
+        "mealsRescued": { "type": "integer" },
+        "foodSavedKg": { "type": "number" },
+        "moneySavedTnd": { "type": "number" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "name", "email", "role", "ecoPoints"]
+    },
+    "Merchant": {
+      "title": "Merchant",
+      "description": "Restaurant ou cafeteria partenaire autour de l'ESSECT",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 120 },
+        "category": { "type": "string", "enum": ["Boulangerie", "Cafétéria", "Plats cuisinés", "Sandwichs", "Pâtisserie"] },
+        "address": { "type": "string", "maxLength": 200 },
+        "distanceMeters": { "type": "integer" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] }
+      },
+      "required": ["id", "ownerId", "name", "status"]
+    },
+    "Offer": {
+      "title": "Offer",
+      "description": "Offre alimentaire anti-gaspillage ou Panier Surprise",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "merchantId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 140 },
+        "offerType": { "type": "string", "enum": ["standard", "surprise"] },
+        "originalPrice": { "type": "number" },
+        "discountedPrice": { "type": "number" },
+        "quantity": { "type": "integer" },
+        "pickupStart": { "type": "string" },
+        "pickupEnd": { "type": "string" }
+      },
+      "required": ["id", "merchantId", "title", "originalPrice", "discountedPrice", "quantity"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Reservation avec paiement Konnect et ticket QR de retrait",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "merchantId": { "type": "string", "maxLength": 128 },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending_payment", "paid", "picked_up", "cancelled"] },
+        "paymentRef": { "type": "string" },
+        "qrToken": { "type": "string" },
+        "ecoPointsAwarded": { "type": "integer" }
+      },
+      "required": ["id", "studentId", "merchantId", "totalAmount", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Profils utilisateurs et compteurs EcoPoints"
+    },
+    "/merchants/{merchantId}": {
+      "schema": { "$ref": "#/entities/Merchant" },
+      "description": "Etablissements partenaires valides par l'administrateur"
+    },
+    "/offers/{offerId}": {
+      "schema": { "$ref": "#/entities/Offer" },
+      "description": "Catalogue des invendus et Paniers Surprise"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Commandes, transactions Konnect test et QR codes"
+    }
+  }
+}

@@ -1,0 +1,122 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Verrou global par defaut
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Profils utilisateurs (isolation PII)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && request.resource.data.keys().hasAll(['name', 'email', 'role', 'ecoPoints', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['name', 'email', 'role', 'phone', 'studentCardId', 'ecoPoints', 'createdAt'])
+        && request.resource.data.role in ['student', 'merchant']
+        && request.resource.data.ecoPoints == 20
+        && request.resource.data.createdAt == request.time;
+      allow update: if isValidId(userId) && (
+        isAdmin() ||
+        (isOwner(userId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'studentCardId'])
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.ecoPoints == resource.data.ecoPoints)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Commerces (validation administrateur requise)
+    match /merchants/{merchantId} {
+      allow get: if isValidId(merchantId) && (resource.data.status == 'approved' || isOwner(resource.data.ownerId) || isAdmin());
+      allow list: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isValidId(merchantId)
+        && isSignedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.name is string && request.resource.data.name.size() <= 120;
+      allow update: if isValidId(merchantId) && (
+        isAdmin() ||
+        (isOwner(resource.data.ownerId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description', 'address', 'openingHours', 'phone'])
+          && request.resource.data.status == resource.data.status)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Offres alimentaires & Paniers Surprise
+    match /offers/{offerId} {
+      allow get: if isValidId(offerId);
+      allow list: if resource.data.active == true || isAdmin();
+      allow create: if isValidId(offerId)
+        && isSignedIn()
+        && get(/databases/$(database)/documents/merchants/$(request.resource.data.merchantId)).data.ownerId == request.auth.uid
+        && get(/databases/$(database)/documents/merchants/$(request.resource.data.merchantId)).data.status == 'approved'
+        && request.resource.data.discountedPrice < request.resource.data.originalPrice
+        && request.resource.data.quantity >= 1;
+      allow update: if isValidId(offerId) && (
+        isAdmin() ||
+        get(/databases/$(database)/documents/merchants/$(resource.data.merchantId)).data.ownerId == request.auth.uid
+      );
+      allow delete: if isValidId(offerId) && (
+        isAdmin() ||
+        get(/databases/$(database)/documents/merchants/$(resource.data.merchantId)).data.ownerId == request.auth.uid
+      );
+    }
+
+    // Commandes, paiements Konnect & QR Codes
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) && (
+        isOwner(resource.data.studentId) ||
+        get(/databases/$(database)/documents/merchants/$(resource.data.merchantId)).data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid || isAdmin()
+      );
+      allow create: if isValidId(orderId)
+        && isSignedIn()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.status == 'pending_payment';
+      allow update: if isValidId(orderId) && (
+        isAdmin() ||
+        (isOwner(resource.data.studentId) && resource.data.status == 'pending_payment'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'paymentRef', 'qrToken', 'paidAt'])) ||
+        (get(/databases/$(database)/documents/merchants/$(resource.data.merchantId)).data.ownerId == request.auth.uid
+          && resource.data.status == 'paid'
+          && request.resource.data.status == 'picked_up'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'pickedUpAt', 'ecoPointsAwarded']))
+      );
+      allow delete: if false;
+    }
+
+    // Notifications FCM persistees
+    match /notifications/{notifId} {
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin();
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isAdmin();
+    }
+  }
+}
